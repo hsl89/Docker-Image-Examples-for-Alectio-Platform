@@ -1,0 +1,11 @@
+DATADIR=/home/ubuntu/DataLake/Data/CIFAR10
+EXPTDIR=/home/ubuntu/DataLake/docker_template/pytorch_template/tmp
+
+docker run -ti --mount type=bind,source=$DATADIR,dst=/data \
+    --mount type=bind,source=$EXPTDIR,dst=/src \
+    --gpus device=0 \
+    -e TASK='train' \
+    -e CUDA_DEVICE='cuda:0'\
+    -e DATA_DIR='/data/' \
+    -e LOOP=0 \
+    pth bash
