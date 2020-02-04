@@ -25,6 +25,10 @@ params = {
     'weight_decay': 5e-4,
     }
 
+def load(pickle_file):
+    with open(pickle_file, 'rb') as f:
+        dt = pickle.load(f)
+    return dt
 
 def save_dict(dictionary, saved_as):
     with open(saved_as, 'wb') as f:
@@ -48,21 +52,23 @@ def train(LOOP):
     model.to(DEVICE)
 
     # load model ckpt from the previous trained LOOP
-    if LOOP:
+    if LOOP > 0:
         ckpt = os.path.join(EXPT_DIR, 'ckpt_{}.pth'.format(LOOP-1))
-
         model.load_state_dict(torch.load(ckpt))
     
     # load selected indices
-    labeled = os.path.join(EXPT_DIR, 'labeled.txt')
+    labeled = load(os.path.join(EXPT_DIR, 'labeled.pkl'))
+    indices = list(labeled.keys())
 
-    f = open(labeled, 'r')
-    indices = f.readlines()
-    indices = [int(x.strip()) for x in indices]
-    f.close()
+    # change dataset object's target attribute to labels
+    # this is used for pollution study
+    cifar_train_ = copy.deepcopy(cifar_train)
 
+    for ix in labeled:
+        cifar_train_.target[ix] = labeled[ix]
+    
     # setup dataloader
-    dataloader = DataLoader(cifar_train,
+    dataloader = DataLoader(cifar_train_,
         batch_size=64, sampler=SubsetRandomSampler(indices))
     
     loss_fn = nn.CrossEntropyLoss()
@@ -113,33 +119,28 @@ def infer(LOOP):
     model.to(DEVICE)
 
     # load model ckpt from the previous trained LOOP
-    if LOOP!=None:
-        ckpt = os.path.join(EXPT_DIR, 'ckpt_{}.pth'.format(LOOP))
-        model.load_state_dict(torch.load(ckpt))
+    ckpt = os.path.join(EXPT_DIR, 'ckpt_{}.pth'.format(LOOP))
+    model.load_state_dict(torch.load(ckpt))
     
     # load selected indices
-    unlabeled = os.path.join(EXPT_DIR, 'unlabeled.txt')
+    unlabeled = load(os.path.join(EXPT_DIR, 'unlabeled.pkl'))
 
-    f = open(unlabeled, 'r')
-    indices = f.readlines()
-    indices = [int(x.strip()) for x in indices]
-    f.close()
+    unlabeled = list(unlabeled.keys())
 
     # setup dataloader
     dataloader = DataLoader(cifar_infer,
-        batch_size=64, sampler=SubsetSampler(indices))
+        batch_size=64, sampler=SubsetSampler(unlabeled))
     
     proba = []
     with torch.no_grad():
-        for x, y in dataloader:
-            x, y  = x.to(DEVICE), y.to(DEVICE)
+        for x, _ in dataloader: # label is not needed
+            x  = x.to(DEVICE)
             y_ = model(x)
             y_ = F.softmax(y_, dim=1) # explict softmax
             proba.append(y_)
     
     x = torch.cat(proba, dim=0).cpu().numpy()
     output = {}
-
     for i, o in zip(indices, x):
         output[i] = o
     

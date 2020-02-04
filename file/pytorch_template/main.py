@@ -27,7 +27,6 @@ class ImageDataCLS(Dataset):
         transform(callable) transform applied to imgs
         '''
         self.transform=transform
-
         if train:
             imgdir=os.path.join(root, 'train')
             labels='train_labels.txt'
@@ -39,7 +38,6 @@ class ImageDataCLS(Dataset):
         for im in os.listdir(imgdir):
             self.fpath.append(
                 os.path.join(root, imgdir, im))
-            
         self.target=[]
         with open(os.path.join(root, labels), 'r') as f:
             for ln in f.readlines():
@@ -58,11 +56,9 @@ class ImageDataCLS(Dataset):
         return img, t
 
 
-
 # model 
 class BasicBlock(nn.Module):
     expansion = 1
-
     def __init__(self, in_planes, planes, stride=1):
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
@@ -178,6 +174,7 @@ cifar_infer = ImageDataCLS(root=data_dir,  train=True,
 cifar_test = ImageDataCLS(root=data_dir,  train=False, 
         transform=test_transform)
 
+
 epochs = 3
 
 params = {
@@ -186,7 +183,10 @@ params = {
     'weight_decay': 5e-4,
     }
 
-
+def load(path):
+    with open(path, 'rb') as f:
+        dt = pickle.load(f)
+    return dt
 
 class SubsetSampler(sampler.Sampler):
     def __init__(self, indices):
@@ -204,18 +204,19 @@ def train(LOOP):
     model.to(DEVICE)
 
     # load model ckpt from the previous trained LOOP
-    if LOOP:
+    if LOOP > 0:
         ckpt = os.path.join(EXPT_DIR, 'ckpt_{}.pth'.format(LOOP-1))
-
         model.load_state_dict(torch.load(ckpt))
     
     # load selected indices
-    labeled = os.path.join(EXPT_DIR, 'labeled.txt')
+    labeled = load(os.path.join(EXPT_DIR, 'labeled.pkl'))
+    indices = list(labeled.keys())
+    
+    # adjust labels (mainly used for pullution study)
+    cifar_train_ = copy.deepcopy(cifar_train)
 
-    f = open(labeled, 'r')
-    indices = f.readlines()
-    indices = [int(x.strip()) for x in indices]
-    f.close()
+    for ix in labeled:
+        cifar_train_.target[ix] = labeled[ix]
 
     # setup dataloader
     dataloader = DataLoader(cifar_train,
@@ -269,17 +270,12 @@ def infer(LOOP):
     model.to(DEVICE)
 
     # load model ckpt from the previous trained LOOP
-    if LOOP!=None:
-        ckpt = os.path.join(EXPT_DIR, 'ckpt_{}.pth'.format(LOOP))
-        model.load_state_dict(torch.load(ckpt))
+    ckpt = os.path.join(EXPT_DIR, 'ckpt_{}.pth'.format(LOOP))
+    model.load_state_dict(torch.load(ckpt))
     
     # load selected indices
-    unlabeled = os.path.join(EXPT_DIR, 'unlabeled.txt')
-
-    f = open(unlabeled, 'r')
-    indices = f.readlines()
-    indices = [int(x.strip()) for x in indices]
-    f.close()
+    unlabeled = load(os.path.join(EXPT_DIR, 'unlabeled.pkl'))
+    indices = list(unlabeled.keys())
 
     # setup dataloader
     dataloader = DataLoader(cifar_infer,
@@ -309,7 +305,6 @@ if __name__ == '__main__':
     TASK = os.getenv('TASK')
     LOOP = int(os.getenv('LOOP'))
     EXPT_DIR = os.getenv('EXPT_DIR')
-    
     model = ResNet18()
     model.to(DEVICE)
 

@@ -1,1 +1,1 @@
-docker build -t hongshan1989/pytorch_resnet:example .
+docker build -t alectio/pytorch_resnet:example .
