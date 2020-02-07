@@ -2,7 +2,7 @@ import os
 import docker
 
 data_dir = '/home/ubuntu/DataLake/Data/CIFAR10DEBUG'
-expt_dir = '/home/ubuntu/DataLake/UserProjects/5e34e9021c9d44000054264e/5e3668771c9d44000088c11d'
+expt_dir = '/home/ubuntu/DataLake/UserProjects/5e34e9021c9d44000054264e/baseline'
 
 client = docker.from_env()
 
@@ -12,11 +12,11 @@ client.containers.run('alectio/pytorch_resnet:example', 'python main.py',
             data_dir: {'bind': '/data', 'mode': 'ro'},
             }, 
         environment={
-            'TASK': 'train',
+            'TASK': 'infer',
             'CUDA_DEVICE': 'cuda:0',
             'DATA_DIR': '/data',
             'EXPT_DIR': '/log',
-            'LOOP': 0,
+            'CKPT_FILE': 'ckpt.pth',
             },
         user=1000,
         runtime='nvidia')

@@ -46,16 +46,15 @@ class SubsetSampler(sampler.Sampler):
     def __len__(self):
         return len(self.indices)
 
-def train(LOOP):
+def train():
     # setup model
     model.train()
     model.to(DEVICE)
-
-    # load model ckpt from the previous trained LOOP
-    if LOOP > 0:
-        ckpt = os.path.join(EXPT_DIR, 'ckpt_{}.pth'.format(LOOP-1))
-        model.load_state_dict(torch.load(ckpt))
     
+    if RESUME_FROM:
+        resume_from = os.path.join(EXPT_DIR, RESUME_FROM) 
+        model.load_state_dict(torch.load(resume_from))
+
     # load selected indices
     labeled = load(os.path.join(EXPT_DIR, 'labeled.pkl'))
     indices = list(labeled.keys())
@@ -85,18 +84,16 @@ def train(LOOP):
             opt.step()
 
     # save ckpt
-    ckpt = os.path.join(EXPT_DIR, 'ckpt_{}.pth'.format(LOOP))
+    ckpt = os.path.join(EXPT_DIR, CKPT_FILE)
     torch.save(model.state_dict(), ckpt)
     return
 
-def validate(LOOP):
+def validate():
     model.eval()
+    ckpt = os.path.join(EXPT_DIR, CKPT_FILE)
 
-    ckpt = os.path.join(EXPT_DIR, 'ckpt_{}.pth'.format(LOOP))
     model.load_state_dict(torch.load(ckpt))
-
     loss_fn = nn.CrossEntropyLoss()
-
     dataloader = DataLoader(cifar_test, batch_size=512)
     tl, nc, pd = 0.0, 0.0, [] # total loss, number of correct prediction, prediction
     with torch.no_grad():
@@ -107,19 +104,21 @@ def validate(LOOP):
             pr = torch.argmax(y_, dim=1) # prediction
             pd.extend(pr.cpu().numpy().tolist())
     
-    fname = os.path.join(EXPT_DIR, 'prediction.txt')
-    f = open(fname, 'w')
-    for p in pd:
-        f.write('{}\n'.format(p))
-    f.close()
+    # write prediction as a pkl file
+    prd = {}
+    for i, p in enumerate(pd):
+        prd[i]=p
+
+    fname = os.path.join(EXPT_DIR, 'prediction.pkl')
+    with open(fname, 'wb') as f:
+        pickle.dump(prd, f)
     return pd
 
-def infer(LOOP):
+def infer():
     model.eval()
     model.to(DEVICE)
 
-    # load model ckpt from the previous trained LOOP
-    ckpt = os.path.join(EXPT_DIR, 'ckpt_{}.pth'.format(LOOP))
+    ckpt = os.path.join(EXPT_DIR, CKPT_FILE) 
     model.load_state_dict(torch.load(ckpt))
     
     # load selected indices
@@ -141,7 +140,7 @@ def infer(LOOP):
     
     x = torch.cat(proba, dim=0).cpu().numpy()
     output = {}
-    for i, o in zip(indices, x):
+    for i, o in zip(unlabeled, x):
         output[i] = o
     
     fname = os.path.join(EXPT_DIR, 'output.pkl') # output file
@@ -152,18 +151,19 @@ def infer(LOOP):
 if __name__ == '__main__':
     DEVICE = os.getenv('CUDA_DEVICE')
     TASK = os.getenv('TASK')
-    LOOP = int(os.getenv('LOOP'))
+    CKPT_FILE = os.getenv('CKPT_FILE')
+    RESUME_FROM = os.getenv('RESUME_FROM')
     EXPT_DIR = os.getenv('EXPT_DIR')
     
     model = resnet.ResNet18()
     model.to(DEVICE)
-
     if TASK == 'train':
-        train(LOOP)
+        train()
     elif TASK=='test':
-        validate(LOOP)
+        validate()
     elif TASK == 'infer':
-        infer(LOOP)
+        print('inferring')
+        infer()
 
 
 
