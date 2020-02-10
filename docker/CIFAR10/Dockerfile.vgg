@@ -1,0 +1,3 @@
+FROM alectio/cifar10:latest
+
+ENV MODEL=vgg
