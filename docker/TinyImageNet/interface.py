@@ -1,14 +1,14 @@
 import os
 import docker
 
-data_dir = '/home/ubuntu/DataLake/Data/CIFAR10DEBUG'
+data_dir = '/home/ubuntu/DataLake/Data/TinyImageNetDebug'
 expt_dir = '/home/ubuntu/Common/tmp'
 
 client = docker.from_env()
 
 def run(image):
-
-    client.containers.run('alectio/pytorch_resnet:example', 'python main.py', 
+    print('Testing on {}'.format(image))
+    client.containers.run(image, 'python main.py', 
             volumes={
                 expt_dir: {'bind': '/log', 'mode':'rw'},
                 data_dir: {'bind': '/data', 'mode': 'ro'},
@@ -28,7 +28,7 @@ nets = ['resnet', 'googlenet',
         'efficientnet', 'vgg']
 
 for n in nets:
-    image = f"alectio/cifar10_{n}:latest"
+    image = f"alectio/tinyimagenet_{n}:latest"
     run(image)
 
         

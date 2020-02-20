@@ -1,0 +1,34 @@
+FROM nvidia/cuda:10.2-base
+
+RUN apt-get update \
+  && apt-get install -y python3-pip python3-dev \
+    && cd /usr/local/bin \
+      && ln -s /usr/bin/python3 python \
+        && pip3 install --upgrade pip
+
+RUN apt-get install -y vim nmap
+RUN apt-get install -y libsm6 libxext6 libxrender-dev
+
+
+COPY .vimrc /root
+ADD .vim /root/.vim
+
+# install pytorch 
+RUN pip install torch
+RUN pip install torchvision
+
+
+
+# install sklearn
+RUN pip install scikit-learn 
+RUN pip install pandas
+RUN pip install numpy
+
+RUN mkdir /data
+RUN mkdir /src
+RUN mkdir /log
+
+WORKDIR /src
+
+
+

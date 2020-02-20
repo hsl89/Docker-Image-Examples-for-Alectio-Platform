@@ -5,14 +5,14 @@ nets = ['resnet', 'googlenet',
 client = docker.from_env()
 
 # rebuild base
-base_image = 'alectio/cifar10:latest'
-client.images.build(path="./", dockerfile='./Dockerfile.cifar',
+base_image = 'alectio/tinyimagenet:latest'
+client.images.build(path="./", dockerfile='./Dockerfile.ti',
         tag=base_image)
 client.images.push(base_image)
 
 
 for n in nets:
-    image = f"alectio/cifar10_{n}:latest"
+    image = f"alectio/tinyimagenet_{n}:latest"
     df=f"./Dockerfile.{n}"
     client.images.build(path="./", dockerfile=df, tag=image)
     client.images.push(image)

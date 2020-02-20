@@ -1,0 +1,4 @@
+FROM alectio/tinyimagenet:latest
+
+ENV MODEL=efficientnet
+

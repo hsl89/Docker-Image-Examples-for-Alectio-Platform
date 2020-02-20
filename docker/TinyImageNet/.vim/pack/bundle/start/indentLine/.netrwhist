@@ -1,0 +1,5 @@
+let g:netrw_dirhistmax  =10
+let g:netrw_dirhistcnt =3
+let g:netrw_dirhist_3='/home/ubuntu/bosanovapoc'
+let g:netrw_dirhist_2='/home/ubuntu/pytorch-retinanet/lib'
+let g:netrw_dirhist_1='/home/ubuntu/pytorch-retinanet/lib/nms'

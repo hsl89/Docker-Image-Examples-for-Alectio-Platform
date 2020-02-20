@@ -1,2 +1,2 @@
 #!/usr/bin/bash
-docker build -t alectio/base:latest .
+docker build -f Dockerfile.torch . -t alectio/pytorch_base:latest 

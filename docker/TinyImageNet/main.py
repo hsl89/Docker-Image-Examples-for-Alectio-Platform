@@ -163,7 +163,7 @@ if __name__ == '__main__':
         model = GoogLeNet()
     elif MODEL == 'efficientnet':
         model = EfficientNetB0()
-    elif MODEL == 'VGG':
+    elif MODEL == 'vgg':
         model = VGG('VGG19')
     
     model.to(DEVICE)

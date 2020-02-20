@@ -21,7 +21,7 @@ class ImageDataCLS(Dataset):
             imgdir=os.path.join(root, 'train')
             labels='train_labels.txt'
         else:
-            imgdir=os.path.join(root, 'test')
+            imgdir=os.path.join(root, 'val')
             labels='test_labels.txt'
 
         # parse label file

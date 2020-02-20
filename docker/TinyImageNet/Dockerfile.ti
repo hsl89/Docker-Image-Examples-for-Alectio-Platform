@@ -8,22 +8,13 @@ RUN apt-get update \
 
 RUN apt-get install -y vim nmap
 
-
 COPY .vimrc /root
 ADD .vim /root/.vim
 
-# install pytorch 
+
+
 RUN pip install torch
 RUN pip install torchvision
-
-
-
-# install sklearn
-RUN pip install scikit-learn 
-RUN pip install pandas
-RUN pip install numpy
-
-
 
 RUN mkdir /data
 RUN mkdir /src
@@ -31,11 +22,8 @@ RUN mkdir /log
 
 WORKDIR /src
 
-
-# copy your source files into /src
-# COPY resnet.py /src
-# COPY main.py /src
-# COPY dataset.py /src
-# COPY imagedata.py /src
-
+COPY main.py /src
+COPY dataset.py /src
+COPY imagedata.py /src
+ADD models /src/models
 
