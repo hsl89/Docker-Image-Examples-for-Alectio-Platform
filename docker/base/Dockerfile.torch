@@ -16,6 +16,7 @@ ADD .vim /root/.vim
 # install pytorch 
 RUN pip install torch
 RUN pip install torchvision
+RUN pip install torchtext
 
 
 
