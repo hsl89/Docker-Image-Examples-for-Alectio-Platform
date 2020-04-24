@@ -1,4 +1,4 @@
-from dataset import ti_train, ti_infer, ti_test
+from dataset import mnist_train, mnist_infer, mnist_test
 import random
 import pickle
 import copy
@@ -14,10 +14,12 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-from models import *
+from model import LeNet
 
+model = LeNet()
 
-epochs = 3
+epochs = 50
+
 params = {
     'batch_size': 64,
     'learning_rate': 1e-4,
@@ -55,30 +57,24 @@ def train():
         model.load_state_dict(torch.load(resume_from))
 
     # load selected indices
-
     labeled = load(os.path.join(EXPT_DIR, 'labeled.pkl'))
     indices = list(labeled.keys())
+
     # change dataset object's target attribute to labels
     # this is used for pollution study
-    ti_train_ = copy.deepcopy(ti_train)
-
-
     for ix in labeled:
-        if ix in ti_train_.meta_info:
-            ti_train_.meta_info[ix]['label'] = labeled[ix]
-        
+        mnist_train.targets[ix] = labeled[ix]
+
     # setup dataloader
-    
-    dataloader = DataLoader(
-        ti_train_,
-        batch_size=64, 
-        sampler=SubsetRandomSampler(indices))
+    dataloader = DataLoader(mnist_train,
+        batch_size=64, sampler=SubsetRandomSampler(indices))
     
     loss_fn = nn.CrossEntropyLoss()
     opt = optim.Adam(model.parameters(), 
         lr=params['learning_rate'], weight_decay=params['weight_decay'])
+
     for epoch in range(epochs):
-        for x, y, _ in dataloader:
+        for x, y in dataloader:
             x, y  = x.to(DEVICE), y.to(DEVICE)
             y_ = model(x)
             loss = loss_fn(y_, y)
@@ -92,14 +88,16 @@ def train():
     return
 
 def validate():
+    model.to(DEVICE)
     model.eval()
     ckpt = os.path.join(EXPT_DIR, CKPT_FILE)
+
     model.load_state_dict(torch.load(ckpt))
     loss_fn = nn.CrossEntropyLoss()
-    dataloader = DataLoader(ti_test, batch_size=512)
+    dataloader = DataLoader(mnist_test, batch_size=512)
     tl, nc, pd = 0.0, 0.0, [] # total loss, number of correct prediction, prediction
     with torch.no_grad():
-        for x,y,_ in dataloader:
+        for x,y in dataloader:
             x,y = x.to(DEVICE),y.to(DEVICE)
             y_ = model(x)
             loss = loss_fn(y_, y)
@@ -129,12 +127,12 @@ def infer():
     unlabeled = list(unlabeled.keys())
 
     # setup dataloader
-    dataloader = DataLoader(ti_infer,
+    dataloader = DataLoader(mnist_infer,
         batch_size=64, sampler=SubsetSampler(unlabeled))
     
     proba = []
     with torch.no_grad():
-        for x, _, _ in dataloader: # label is not needed
+        for x, _ in dataloader: # label is not needed
             x  = x.to(DEVICE)
             y_ = model(x)
             y_ = F.softmax(y_, dim=1) # explict softmax
@@ -157,17 +155,6 @@ if __name__ == '__main__':
     RESUME_FROM = os.getenv('RESUME_FROM')
     EXPT_DIR = os.getenv('EXPT_DIR')
 
-    MODEL = os.getenv('MODEL')
-    if MODEL=='resnet':
-        model = ResNet18()
-    elif MODEL=='googlenet':
-        model = GoogLeNet()
-    elif MODEL == 'efficientnet':
-        model = EfficientNetB0()
-    elif MODEL == 'vgg':
-        model = VGG('VGG19')
-    
-    model.to(DEVICE)
     if TASK == 'train':
         train()
     elif TASK=='test':

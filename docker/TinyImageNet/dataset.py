@@ -7,12 +7,22 @@ from imagedata import ImageDataCLS
 # setup dataset
 data_dir = os.getenv('DATA_DIR') 
 
+class To3Channels(object):
+    '''convert grayscale image to tensors with 3 channels'''
+    def __call__(self, tensor):
+        if tensor.shape[0] == 1:
+            return tensor.repeat(3, 1, 1)
+        else:
+            return tensor
+
+
 
 train_transform = transforms.Compose([
     # transforms.RandomRotation(degrees=[0, 360]),
     transforms.RandomCrop(64, padding=4),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
+    To3Channels(),
     transforms.Normalize(
         (0.4914,0.4822, 0.4465),
         (0.2023, 0.1994, 0.2010))
@@ -69,6 +79,9 @@ def write_debug_data_dir(dataset, src, target):
         
 
 if __name__ == "__main__":
-    write_debug_data_dir(ti_train, 'TinyImageNet', 'TinyImageNetDebug')
-    write_debug_data_dir(ti_test, 'TinyImageNet', 'TinyImageNetDebug')
+    # write_debug_data_dir(ti_train, 'TinyImageNet', 'TinyImageNetDebug')
+    # write_debug_data_dir(ti_test, 'TinyImageNet', 'TinyImageNetDebug')
+    for i in range(len(ti_train)):
+        ti_train[i]
+
 

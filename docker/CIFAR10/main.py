@@ -51,8 +51,11 @@ def train():
     model.train()
     model.to(DEVICE)
     
+
     if RESUME_FROM:
+
         resume_from = os.path.join(EXPT_DIR, RESUME_FROM) 
+        print(resume_from)
         model.load_state_dict(torch.load(resume_from))
 
     # load selected indices
@@ -138,7 +141,7 @@ def infer():
             y_ = F.softmax(y_, dim=1) # explict softmax
             proba.append(y_)
     
-    x = torch.cat(proba, dim=0).cpu().numpy()
+    x = torch.cat(proba, dim=0).cpu().numpy().tolist()
     output = {}
     for i, o in zip(unlabeled, x):
         output[i] = o
@@ -155,17 +158,18 @@ if __name__ == '__main__':
     RESUME_FROM = os.getenv('RESUME_FROM')
     EXPT_DIR = os.getenv('EXPT_DIR')
 
-    MODEL = os.getenv('MODEL')
-    if MODEL=='resnet':
-        model = ResNet18()
-    elif MODEL=='googlenet':
-        model = GoogLeNet()
-    elif MODEL == 'efficientnet':
-        model = EfficientNetB0()
-    elif MODEL == 'vgg':
-        model = VGG('VGG19')
+    # MODEL = os.getenv('MODEL')
+    # if MODEL=='resnet':
+    #     model = ResNet18()
+    # elif MODEL=='googlenet':
+    #     model = GoogLeNet()
+    # elif MODEL == 'efficientnet':
+    #     model = EfficientNetB0()
+    # elif MODEL == 'vgg':
+    #     model = VGG('VGG19')
 
-    
+    model = ResNet18()
+
     model.to(DEVICE)
     if TASK == 'train':
         train()

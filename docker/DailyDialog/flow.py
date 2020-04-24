@@ -81,7 +81,7 @@ class Flow:
             self.optimizer.load_state_dict(
                 ckpt['optimizer'])
 
-            for state in self.optimizer.state_dict():
+            for state in self.optimizer.state.values():
                 for k, v in state.items():
                     if isinstance(v, torch.Tensor):
                         state[k] = v.to(envs.CUDA_DEVICE)

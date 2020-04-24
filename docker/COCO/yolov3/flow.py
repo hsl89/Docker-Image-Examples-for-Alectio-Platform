@@ -22,7 +22,6 @@ class Flow:
         self.dataset = dataset
         self.testset = testset
         self.device = CUDA_DEVICE
-
         
         pg0, pg1, pg2 = [], [], []
         for k,v in dict(self.model.named_parameters()).items():
@@ -64,7 +63,6 @@ class Flow:
                 prebias=False
             self.optimizer.param_groups[2]['lr'] = ps[0]
 
-
         if samples:
             sampler = SubsetRandomSampler(samples)
         else:
@@ -84,7 +82,7 @@ class Flow:
             pred = self.model(imgs)
             loss, loss_items = compute_loss(pred, targets, self.model, 
                     not prebias)
-            
+             
             if not torch.isfinite(loss):
                 print('Warning: non-finite loss, skipping this batch')
                 continue
@@ -103,12 +101,14 @@ class Flow:
             'model': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
             }
+        print('saving the model at', os.path.join(EXPT_DIR, CKPT_FILE))
+
         torch.save(ckpt, os.path.join(EXPT_DIR, CKPT_FILE))
 
         return tuple(mloss.cpu().numpy().tolist())
 
     def validate(self, samples=None, batch_size=32, 
-            conf_thres=0.1, iou_thres=0.6):
+            conf_thres=0.5, iou_thres=0.5):
         # num of class
         nc = 80
         seen = 0
@@ -140,12 +140,10 @@ class Flow:
                 inf_out = inf_out.cpu()
                 
                 # run nms
-                print('running nms')
                 # list of bbox on each image
                 bboxs = non_max_suppression(inf_out, conf_thres=conf_thres,
                         iou_thres=iou_thres)
                 prediction.extend(bboxs)
-
 
         for i, bbox in enumerate(prediction):
             if bbox is not None:
@@ -158,6 +156,7 @@ class Flow:
         # save prediction to EXPT_DIR
         with open(os.path.join(EXPT_DIR, 'prediction.pkl'), 'wb') as f:
             pickle.dump(prediction, f)
+        
         
         return 
 
@@ -177,7 +176,8 @@ class Flow:
                 inf_out, _ = self.model(imgs)
                 inf_out = inf_out.cpu()
                 for t in inf_out:
-                    output.append(t.numpy().tolist())
+                    output.append(t.numpy())
+
         output = {samples[i]: output[i] for i in range(len(samples))} 
         with open(os.path.join(EXPT_DIR, 'output.pkl'), 'wb') as f:
             pickle.dump(output, f)

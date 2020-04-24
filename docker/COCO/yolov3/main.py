@@ -19,7 +19,6 @@ CUDA_DEVICE = os.getenv('CUDA_DEVICE')
 def train():
     epochs=1
     model = Darknet()
-    
     if RESUME_FROM:
         ckpt = torch.load(os.path.join(EXPT_DIR, RESUME_FROM))
         model.load_state_dict(ckpt['model'])
@@ -36,8 +35,6 @@ def train():
     for epoch in range(epochs):
         fw.train(epoch, samples=list(selected.keys()),
                 prebias=False)
-    
-
     return
 
 def test():
